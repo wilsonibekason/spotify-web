@@ -1,10 +1,19 @@
 "use client";
 
-import Modal from "@/components/Modal";
+import AuthModal from "@/components/AuthModal";
+import UploadModal from "@/components/UploadModal";
+import {
+  useSessionContext,
+  useSupabaseClient,
+} from "@supabase/auth-helpers-react";
+import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 
 const ModalProvider = () => {
   const [isMounted, setIsMounted] = useState(false);
+  const supabaseClient = useSupabaseClient();
+  const router = useRouter();
+  const { session } = useSessionContext();
 
   useEffect(() => {
     setIsMounted(true);
@@ -13,14 +22,8 @@ const ModalProvider = () => {
   !isMounted && null;
   return (
     <>
-      <Modal
-        title="Modal Text"
-        description="Modal Description"
-        isOpen
-        onChange={() => {}}
-      >
-        Test Modal
-      </Modal>
+      <AuthModal />
+      <UploadModal />
     </>
   );
 };
