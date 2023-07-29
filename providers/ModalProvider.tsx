@@ -11,7 +11,6 @@ import React, { useEffect, useState } from "react";
 
 const ModalProvider = () => {
   const [isMounted, setIsMounted] = useState(false);
-  const supabaseClient = useSupabaseClient();
   const router = useRouter();
   const { session } = useSessionContext();
 
