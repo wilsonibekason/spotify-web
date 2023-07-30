@@ -6,8 +6,10 @@ interface ModalProps {
   isOpen: boolean;
   onChange: (open: boolean) => void;
   title: string;
+  // onChange?(open: boolean): void;
   description: string;
   children: React.ReactNode;
+  onClose?: () => void
 }
 
 const Modal: React.FC<ModalProps> = ({
@@ -16,8 +18,11 @@ const Modal: React.FC<ModalProps> = ({
   isOpen,
   onChange,
   title,
+    onClose
 }) => {
+
   return (
+    //   // @ts-ignore
     <Dialog.Root open={isOpen} defaultOpen={isOpen} onOpenChange={onChange}>
       {/* <Dialog.Trigger asChild>
         <button>Click to Trigger the Button</button>
@@ -34,7 +39,9 @@ const Modal: React.FC<ModalProps> = ({
             <div>{children}</div>
             <Dialog.Close asChild>
               <button className="text-neutral-400 hover:text-white absolute top-[10px] right-[10px] inline-flex w-[25px] h-[25px] appearance-none items-center justify-center rounded-full focus:outline-none">
-                <IoMdClose />
+                <IoMdClose
+                onClick={onClose}
+                />
               </button>
             </Dialog.Close>
           </Dialog.Content>

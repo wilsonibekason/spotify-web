@@ -1,19 +1,20 @@
+"use client"
+
 import * as React from "react";
 import Modal from "./Modal";
 import uniqueId from "uniqid"
 import useUploadModal from "@/hooks/useUploadModal";
 import {
   useForm,
-  FieldValues,
-  SubmitHandler,
 } from "react-hook-form";
 import Input from "./Input";
-import ImageUploader from "@/hooks/ImageUploader";
 import Button from "@/components/Button";
 import {toast} from "react-hot-toast";
 import {useUser} from "@/hooks/useUser";
 import {useSupabaseClient} from "@supabase/auth-helpers-react";
 import {useRouter} from "next/navigation";
+import * as z from "zod"
+import {zodResolver} from "@hookform/resolvers/zod";
 
 type ErrorMessage = {
   message:  string
@@ -23,37 +24,46 @@ const ERROR_MESSAGES = {
   uploadImageFailed: "Failed to upload the image.",
   songCreationFailed: "Failed to create the song.",
 };
+
+const formSchema = z.object({
+  author: z.string().nonempty("Please enter the authors name"),
+  title: z.string().nonempty("Enter your title"),
+  song: z.string().nullable(),
+  image: z.string().nullable()
+})
 const UploadModal = () => {
   const supabaseClient = useSupabaseClient()
-  const router = useRouter()
-  const {user}  = useUser()
-  const [isLoading, setIsLoading] = React.useState<boolean>(false)
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FieldValues>({
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       author: "",
       title: "",
-      song: null,
       image: null,
+      song: null
     },
   });
+  const router = useRouter()
+  const {user}  = useUser()
+  const [isLoading, setIsLoading] = React.useState<boolean>(false)
   const uploadModal = useUploadModal();
   const onChange = (open: boolean) => {
     if (!open) {
-      reset();
+      form.reset();
       return uploadModal.onClose;
     }
   };
-
-  const onSubmit: SubmitHandler<FieldValues> = async (values) => {
+  async function onSubmit(values:  z.infer<typeof  formSchema>, event?: React.BaseSyntheticEvent){
+    event?.preventDefault()
+    console.log("Submitting form...", values);
     try{
       setIsLoading(true)
       const imageFile = values.image?.[0]
       const songFile = values.song?.[0]
-      toast.success(songFile + imageFile)
-      // if(!imageFile || !songFile || !user) {
-      //   toast.error("Missing fields")
-      //   return
-      // }
+      if(!imageFile || !songFile || !user) {
+        toast.error("Missing fields")
+        return
+      }
       const uniqueID = uniqueId()
       // upload songs
       const {data: songData, error: songError}  = await supabaseClient.storage.from("songs").upload(`song-${values.title}-${uniqueID}`, songFile, {
@@ -91,7 +101,7 @@ const UploadModal = () => {
       setIsLoading(false)
       toast.success("song created.")
       console.table(supabaseData)
-      reset()
+      form.reset()
       uploadModal.onClose()
 
     }
@@ -109,55 +119,67 @@ const UploadModal = () => {
   };
 
   return (
-    <>
-      <Modal
-          title="Add a song"
-          description="Upload an mp3 file"
-          isOpen={uploadModal.isOpen}
-          onChange={onChange}
-          onClose={uploadModal.onClose}
+  <>
+    <Modal
+        title="Add a song"
+        description="Upload an mp3 file"
+        isOpen={uploadModal.isOpen}
+        onChange={onChange}
+        onClose={uploadModal.onClose}
+    >
+      <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex flex-col gap-y-4"
       >
-        {/* FORM COMPONENT */}
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-y-3">
-          {/* ... form fields */}
-          <Input
-              id={"title"}
-              {...register("title", { required: true })}
-              placeholder={"Song title"}
-          />
-          <Input
-              id={"author"}
-              {...register("author", {required: true})}
-              placeholder={"Song Author"}
-          />
-          <div>
-            <div>
-              <p>Select a file to upload</p>
-              <Input
-                  id={"song"}
-                  type={"file"}
-                  accept={".mp3"}
-                  {...register("song", {required: true})}
-              />
-            </div>
-            <div>
-              <p>Select an image to upload</p>
-              <Input
-                  id={"image"}
-                  type={"file"}
-                  accept={"images/*"}
-                  {...register("image", {required: true})}
-              />
-            </div>
+        <Input
+            id="title"
+            disabled={isLoading}
+            {...form.register('title', { required: true })}
+            placeholder="Song title"
+        />
+        <Input
+            id="author"
+            disabled={isLoading}
+            {...form.register('author', { required: true })}
+            placeholder="Song author"
+        />
+        <div>
+          <div className="pb-1">
+            Select a song file
           </div>
-          {/*  IMAGE*/}
-          <ImageUploader/>
-          <Button type="submit" disabled={isLoading}>Submit</Button>
-        </form>
-        {isLoading && <div>Loading...</div>}
-      </Modal>
-
-    </>
+          <Input
+              disabled={isLoading}
+              type="file"
+              accept=".mp3"
+              id="song"
+              {...form.register('song', { required: true })}
+          />
+        </div>
+        <div>
+          <div className="pb-1">
+            Select an image
+          </div>
+          <Input
+              disabled={isLoading}
+              type="file"
+              accept="image/*"
+              id="image"
+              {...form.register('image', { required: true })}
+          />
+        </div>
+        <button
+            className="text-blue-500 disabled:text-red-500"
+            disabled={ !form.getValues().title || !form.getValues().author || isLoading} type="submit"
+        >
+          { isLoading ? "Creating" : "Create" }
+        </button>
+        {/*<Button disabled={ !form.getValues().title || !form.getValues().author || isLoading} type="submit">*/}
+        {/*  { isLoading ? "Creating" : "Create" }*/}
+        {/*</Button>*/}
+        {isLoading ? <div>Loading...</div> : <div>Will Load</div>}
+      </form>
+    </Modal>
+  </>
   );
 };
 

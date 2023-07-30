@@ -6,17 +6,20 @@ import { AiOutlinePlus } from "react-icons/ai";
 import useAuthModal from "@/hooks/useAuthModal";
 import { useUser } from "@/hooks/useUser";
 import useUploadModal from "@/hooks/useUploadModal";
+import {toast} from "react-hot-toast";
 
 const Library = () => {
   const { user } = useUser();
-  const { isOpen } = useAuthModal();
+  const { onOpen } = useAuthModal();
   const uploadModal = useUploadModal();
   const handleOnclick = () => {
     if (!user) {
-      return isOpen;
+      // @ts-ignore
+      return onOpen() && toast.error("Error, Issue should be addressed immediately")
     }
-    return uploadModal.isOpen;
+    return uploadModal.onOpen()
   };
+
   return (
     <div className="flex flex-col">
       <div className="flex items-center justify-between px-5 py-4">

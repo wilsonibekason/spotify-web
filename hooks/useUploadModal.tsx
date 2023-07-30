@@ -13,3 +13,4 @@ const useUploadModal = create<UploadModalState>((set) => ({
 }));
 
 export default useUploadModal;
+
